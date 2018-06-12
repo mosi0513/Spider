@@ -56,8 +56,8 @@ class Spider():
             callback = weixin_request.callback
             response = self.request(weixin_request)
             if response and response.status_code in VALID_STATUSES:
-                results = list(callback(response))# 解析之后形成一个列表
-                if results:#如果条件为真
+                results = list(callback(response))
+                if results:
                     for result in results:
                         print('New Resust', type(result))
                     if isinstance(result, Weixin_Request):
@@ -73,7 +73,6 @@ class Spider():
 #  error handle
     def error(self, weixin_request):
         weixin_request.fail_time = weixin_request.fail_time + 1
-        #  请求失败的次数 + 请求的url
         print('Request Faild', weixin_request.fail_time, 'Times', weixin_request.url)
         if weixin_request.fail_time < MAX_FAILED_TIME:
             self.queue.add(weixin_request)
@@ -89,12 +88,10 @@ class Spider():
                         'http': 'http://' + proxy,
                         'https':'https://'+ proxy
                     }
-                    #  谁调用返回给谁，1.weixin_request请求本身的的一些参数， 2.weixin_request对象本身的超出时间 3.不设置自动跳转 4.传入代理ip
                     return self.session.send(weixin_request.prepare(), timeout=weixin_request.timeout, allow_redirects=False, proxies=proxies)
-                #  如果不需要代理，则返回need_proxy 为假的请求对象
                 return  self.session.send(weixin_request.prepare(), timeout=weixin_request.timeout, allow_redirects=False)
         except(ConnectionError, ReadTimeout) as e:
-            print(e.args)#  出现一场已元组的形式打印出来
+            print(e.args)
             return False
 
 
@@ -105,7 +102,7 @@ class Spider():
             response = requests.get(PROXY_POOL_URL)
             if response.status_code == 200:
                 print('Get proxy', response.text)
-                return response.text#  谁调用返回给谁
+                return response.text
             return None
         except requests.ConnectionError:
             return None
@@ -113,9 +110,8 @@ class Spider():
 
 #  parse index
     def parse_index(self, response):
-        # 1. conversion
+        # conversion
         doc = pq(response.text)
-        #  items() 类似于一种生成器 ，遍历一下就都出来了
         items = doc('.news-box .news-list li .txt-box h3 a').items()
         for item in items:
             url = item.attr('href')
